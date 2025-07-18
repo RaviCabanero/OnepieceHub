@@ -32,10 +32,6 @@
     button:hover {
       background: #d35400;
     }
-    button:disabled {
-      background: #bdc3c7;
-      cursor: not-allowed;
-    }
     .card {
       border: 1px solid #ccc;
       background: #fff;
@@ -51,6 +47,7 @@
       height: 100px;
       object-fit: contain;
       margin-bottom: 10px;
+      border-radius: 5px;
     }
     #results {
       margin-top: 20px;
@@ -70,22 +67,49 @@
       if (e.key === 'Enter') search();
     });
 
+    // 🔄 Character name-to-image mapping
+    const imageMap = {
+      "Monkey D. Luffy": "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Post_Timeskip_Infobox.png",
+      "Roronoa Zoro": "https://tse3.mm.bing.net/th/id/OIP.eT8DNM1XjF8bkwjdUXnYOwHaEK?pid=Api&P=0&h=180",
+      "Nami": "https://tse4.mm.bing.net/th/id/OIP.WOyf7PbO0-SfizvzY2E1SgHaE8?pid=Api&P=0&h=18",
+      "Sanji": "https://tse3.mm.bing.net/th/id/OIP.Re7p66eKaxAiX9TTFJVc-wHaEK?pid=Api&P=0&h=180",
+      "Usopp": "https://tse2.mm.bing.net/th/id/OIP.q2PKO2oQa6Sy4UBcekit9AHaE8?pid=Api&P=0&h=180",
+      "Tony Tony Chopper": "http://pre04.deviantart.net/35d0/th/pre/i/2015/113/2/9/tony_tony_chopper_by_donaco-d5uyx0q.jpg",
+      "Nico Robin": "https://tse1.mm.bing.net/th/id/OIP.1tyCeY2MlhsiOwpFGdiPPAHaEo?pid=Api&P=0&h=180",
+      "Franky": "https://tse3.mm.bing.net/th/id/OIP.8S8vGvr_5__lmokrC51k-QHaEK?pid=Api&P=0&h=180",
+      "Brook": "https://tse1.mm.bing.net/th/id/OIP.nj2i6mygP9y5HVT70zGHSQHaEK?pid=Api&P=0&h=180",
+      "Jinbe": "https://tse4.mm.bing.net/th/id/OIP.F3IT8gJmlxDi4h8inDuY2gHaFO?pid=Api&P=0&h=180",
+      "Shanks": "https://tse1.mm.bing.net/th/id/OIP.IcXMTz7XWpMkobn9sq8OWQHaF7?pid=Api&P=0&h=180",
+      "Trafalgar Law": "https://tse4.mm.bing.net/th/id/OIP.f5lvAkzGzgUpZuLhn1ZqNwHaEK?pid=Api&P=0&h=180",
+      "Eustass Kid": "https://tse4.mm.bing.net/th/id/OIP.cyMyoNjFjIOX2Q5xBoeBiAHaF7?pid=Api&P=0&h=180",
+      "Portgas D. Ace": "https://tse3.mm.bing.net/th/id/OIP.e21ytk9yEjrAexSRTq2q4AHaGA?pid=Api&P=0&h=180",
+      "Sabo": "https://tse1.mm.bing.net/th/id/OIP.Y6tD7n8g9Rj3Lkt2G_y66AHaHa?pid=Api&P=0&h=180",
+      "Buggy": "https://tse2.mm.bing.net/th/id/OIP.dAODFUp7_gNg5U1m1dgA7wHaEc?pid=Api&P=0&h=180",
+      "Kaido": "https://tse4.mm.bing.net/th/id/OIP.a6YwmrVDXLd1jxyoR23Z7QHaEK?pid=Api&P=0&h=180",
+      "Big Mom": "https://tse4.mm.bing.net/th/id/OIP.IM0vfFk6_o-Vf73N9JR1sgHaGo?pid=Api&P=0&h=180",
+      "Blackbeard": "https://tse3.mm.bing.net/th/id/OIP.xw5WNimWMSrkVw4otKnm1gHaHT?pid=Api&P=0&h=180",
+      "Boa Hancock": "https://tse1.mm.bing.net/th/id/OIP.vOiYGNiXNFjUJtuCCPtnFwHaD9?pid=Api&P=0&h=180"
+    };
+
+    // 🖼 Get image URL by name
+    const getImageUrl = (name) => {
+      return imageMap[name] || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=100&background=e67e22&color=ffffff`;
+    };
+
     function search() {
       const query = searchInput.value.trim();
+      const container = document.getElementById('results');
+
       if (!query) {
         alert('Please enter a character name to search');
         return;
       }
 
-      // Show loading state
-      const container = document.getElementById('results');
       container.innerHTML = '<p>Searching...</p>';
 
       fetch(`/search?q=${encodeURIComponent(query)}`)
         .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           return res.json();
         })
         .then(data => {
@@ -97,19 +121,17 @@
           }
 
           data.forEach(c => {
-            // Better image handling with multiple fallback options
-            const imageUrl = c.image_url || `https://via.placeholder.com/100x100/e67e22/ffffff?text=${encodeURIComponent(c.name.split(' ')[0])}`;
-            
+            const imageUrl = getImageUrl(c.name);
             const cardElement = document.createElement('div');
             cardElement.className = 'card';
             cardElement.innerHTML = `
               <img src="${imageUrl}" 
                    alt="${c.name}" 
-                   onerror="handleImageError(this, '${c.name}')">
+                   onerror="this.src='https://via.placeholder.com/100x100?text=OP'">
               <h3>${c.name}</h3>
               <p><strong>Bounty:</strong> ${c.bounty || 'Unknown'}</p>
-              ${c.crew ? `<p><strong>Crew:</strong> ${c.crew}</p>` : ''}
               ${c.devil_fruit ? `<p><strong>Devil Fruit:</strong> ${c.devil_fruit}</p>` : ''}
+              ${c.crew ? `<p><strong>Crew:</strong> ${c.crew}</p>` : ''}
             `;
             container.appendChild(cardElement);
           });
@@ -118,34 +140,6 @@
           console.error('Search error:', err);
           container.innerHTML = '<p style="color:red;">Failed to fetch data. Please try again.</p>';
         });
-    }
-
-    function handleImageError(img, characterName) {
-      // Try different fallback options
-      const fallbacks = [
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(characterName)}&size=100&background=e67e22&color=ffffff&format=png`,
-        `https://via.placeholder.com/100x100/e67e22/ffffff?text=${encodeURIComponent(characterName.split(' ')[0])}`,
-        `https://via.placeholder.com/100x100/34495e/ffffff?text=OP`
-      ];
-      
-      const currentSrc = img.src;
-      let nextFallback = null;
-      
-      // Find the next fallback to try
-      for (let i = 0; i < fallbacks.length; i++) {
-        if (!currentSrc.includes(fallbacks[i])) {
-          nextFallback = fallbacks[i];
-          break;
-        }
-      }
-      
-      if (nextFallback) {
-        img.src = nextFallback;
-      } else {
-        // Last resort: hide image and show name
-        img.style.display = 'none';
-        img.parentElement.style.paddingTop = '20px';
-      }
     }
   </script>
 </body>
